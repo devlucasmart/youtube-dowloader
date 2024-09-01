@@ -20,17 +20,14 @@ app.post('/download', (req, res) => {
   // Executa o comando para baixar o vídeo
   const downloadProcess = spawn(command, args);
 
-  // Captura a saída padrão (stdout) em tempo real
   downloadProcess.stdout.on('data', (data) => {
     console.log(`Status: ${data}`);
   });
 
-  // Captura erros (stderr) em tempo real
   downloadProcess.stderr.on('data', (data) => {
     console.error(`Erro: ${data}`);
   });
 
-  // Quando o processo de download for concluído
   downloadProcess.on('close', (code) => {
     if (code === 0) {
       res.send({ message: 'Vídeo baixado com sucesso!' });

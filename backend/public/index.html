@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download de Vídeos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button.cancel {
+            background-color: #dc3545;
+            margin-top: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #status {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Download de Vídeos</h1>
+        <input type="text" id="videoUrl" placeholder="Insira a URL do vídeo" />
+        <button id="downloadBtn" onclick="downloadVideo()">Baixar Vídeo</button>
+        <button id="cancelBtn" class="cancel" style="display: none;" onclick="cancelDownload()">Cancelar Download</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let downloadProcessId;
+
+        async function downloadVideo() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            const statusDiv = document.getElementById('status');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            if (!videoUrl) {
+                statusDiv.innerHTML = '<p style="color: red;">Por favor, insira uma URL válida.</p>';
+                return;
+            }
+
+            statusDiv.innerHTML = '<p>Aguarde, baixando o vídeo...</p>';
+            cancelBtn.style.display = 'block';
+            downloadBtn.disabled = true;
+
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: videoUrl })
+                });
+
+                const data = await response.json();
+                downloadProcessId = data.processId;
+
+                if (response.ok) {
+                    statusDiv.innerHTML = '<p style="color: green;">' + data.message + '</p>';
+                } else {
+                    statusDiv.innerHTML = '<p style="color: red;">' + data.error + '</p>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<p style="color: red;">Erro ao conectar com o servidor.</p>';
+            } finally {
+                cancelBtn.style.display = 'none';
+                downloadBtn.disabled = false;
+            }
+        }
+
+        async function cancelDownload() {
+            const statusDiv = document.getElementById('status');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            try {
+                const response = await fetch('/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ processId: downloadProcessId })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = '<p style="color: orange;">' + data.message + '</p>';
+                } else {
+                    statusDiv.innerHTML = '<p style="color: red;">Não foi possível cancelar o download.</p>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<p style="color: red;">Erro ao conectar com o servidor.</p>';
+            } finally {
+                cancelBtn.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
